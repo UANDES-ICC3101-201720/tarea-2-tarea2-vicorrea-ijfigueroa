@@ -1,2 +1,2 @@
-# osn2017-virtmem
+# virtmem
 Operating Systems and Networks - Virtual Memory Assignment (Tarea 2)
