@@ -22,7 +22,20 @@ how to use the page table and disk interfaces.
 	*/
 void page_fault_handler_FIFO(struct page_table *pt, int page)
 {
-	
+	/*
+	page_table_print(pt);
+	char ** frame_table = page_table_get_frame_table(pt);
+	int nframes = page_table_get_nframes(pt);
+	char *physmem = page_table_get_physmem(pt);
+	int ftFull = 0;
+	if (!ftFull){
+		for (int i = 0; i<nframes;i++)
+			if(frame_table[i]==NULL){
+				page_table_set_entry(pt, page, i, PROT_READ);
+				disk_read(disk,page,&physmem[i]);
+			}
+	}
+	*/
 
 	printf("page fault on page #%d\n",page);
 	exit(1);
@@ -72,6 +85,8 @@ int main( int argc, char *argv[] )
 	//Inicio de la memoria fisica  de la tabla de paginas pt
 	char *physmem = page_table_get_physmem(pt);
 	char *frame_table = malloc(nframes*sizeof(char));
+
+	for 
 	
 	if(!strcmp(program,"sort")) {
 		sort_program(virtmem,npages*PAGE_SIZE);

@@ -60,4 +60,6 @@ void page_table_print_entry( struct page_table *pt, int page );
 
 void page_table_print( struct page_table *pt );
 
+char ** page_table_get_frame_table(struct page_table *pt);
+
 #endif
