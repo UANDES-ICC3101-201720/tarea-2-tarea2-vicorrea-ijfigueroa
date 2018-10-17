@@ -15,27 +15,34 @@ how to use the page table and disk interfaces.
 #include <string.h>
 #include <errno.h>
 
-void page_fault_handler( struct page_table *pt, int page )
-{
-	/*
+/*
 	Cuando se trata de leer una pagina, esta funcion le asigna 
 	un marco a aquella pagina si esta no tiene un marco y luego
 	cargara la pagina desde el disco al marco asignado 
 	*/
+void page_fault_handler_FIFO(struct page_table *pt, int page)
+{
+	
+
 	printf("page fault on page #%d\n",page);
 	exit(1);
+}
+
+void page_fault_handler_CUSTOM(struct page_table *pt, int page){
+
 }
 
 int main( int argc, char *argv[] )
 {
 	if(argc!=5) {
 		/* Add 'random' replacement algorithm if the size of your group is 3 */
-		printf("use: virtmem <npages> <nframes> <lru|fifo> <sort|scan|focus>\n");
+		printf("use: virtmem <npages> <nframes> <custom|fifo> <sort|scan|focus>\n");
 		return 1;
 	}
 
 	int npages = atoi(argv[1]);
 	int nframes = atoi(argv[2]);
+	const char *algorithm = argv[3];
 	const char *program = argv[4];
 
 	struct disk *disk = disk_open("myvirtualdisk",npages);
@@ -44,8 +51,17 @@ int main( int argc, char *argv[] )
 		return 1;
 	}
 
+	struct page_table *pt;
+	if (!strcmp(algorithm, "fifo")){
+		pt = page_table_create( npages, nframes, page_fault_handler_FIFO );
+	}
+	else if (!strcmp(algorithm, "custom")){
+		pt = page_table_create( npages, nframes, page_fault_handler_CUSTOM);
+	}
+	else {
+		fprintf(stderr, "unknown algorithm: %s\n",algorithm);
+	}
 
-	struct page_table *pt = page_table_create( npages, nframes, page_fault_handler );
 	if(!pt) {
 		fprintf(stderr,"couldn't create page table: %s\n",strerror(errno));
 		return 1;
@@ -55,11 +71,8 @@ int main( int argc, char *argv[] )
 	char *virtmem = page_table_get_virtmem(pt); 
 	//Inicio de la memoria fisica  de la tabla de paginas pt
 	char *physmem = page_table_get_physmem(pt);
-
-	//Inicio prueba
-	for (int i = 0; i<nframes;i++){
-		page_table_set_entry(pt, i, i, PROT_WRITE); //Asigna la pagina i al marco i
-	//Fin prueba
+	char *frame_table = malloc(nframes*sizeof(char));
+	
 	if(!strcmp(program,"sort")) {
 		sort_program(virtmem,npages*PAGE_SIZE);
 
