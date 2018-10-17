@@ -25,7 +25,6 @@ struct page_table {
 	int nframes;
 	int *page_mapping;
 	int *page_bits;
-	char **frame_table;//Agregada la tabla de marcos
 	page_fault_handler_t handler;
 };
 
@@ -78,10 +77,6 @@ struct page_table * page_table_create( int npages, int nframes, page_fault_handl
 
 	pt->physmem = mmap(0,nframes*PAGE_SIZE,PROT_READ|PROT_WRITE,MAP_SHARED,pt->fd,0);
 	pt->nframes = nframes;
-	pt->frame_table = malloc(nframes*sizeof(char*)); //Agregada la tabla de marcos
-	for (int i = 0; i<nframes; i++){
-		pt->frame_table[i] = malloc(4*sizeof(char));
-	}
 	pt->virtmem = mmap(0,npages*PAGE_SIZE,PROT_NONE,MAP_SHARED|MAP_NORESERVE,pt->fd,0);
 	pt->npages = npages;
 
@@ -189,6 +184,4 @@ char * page_table_get_physmem( struct page_table *pt )
 	return pt->physmem;
 }
 
-char ** page_table_get_frame_table(struct page_table *pt){ //funcion agregada
-	return pt->frame_table;
-}
+
