@@ -73,6 +73,7 @@ int main( int argc, char *argv[] )
 	}
 	else {
 		fprintf(stderr, "unknown algorithm: %s\n",algorithm);
+		return 1;
 	}
 
 	if(!pt) {
@@ -85,7 +86,7 @@ int main( int argc, char *argv[] )
 	//Inicio de la memoria fisica  de la tabla de paginas pt
 	char *physmem = page_table_get_physmem(pt);
 	char *frame_table = malloc(nframes*sizeof(char));
-	
+
 	if (!strcmp(program,"sort")) {
 		sort_program(virtmem,npages*PAGE_SIZE);
 
@@ -96,7 +97,7 @@ int main( int argc, char *argv[] )
 		focus_program(virtmem,npages*PAGE_SIZE);
 
 	} else {
-		fprintf(stderr,"unknown program: %s\n",argv[3]);
+		fprintf(stderr,"unknown program: %s\n", program);
 
 	}
 
