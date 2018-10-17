@@ -20,7 +20,7 @@ how to use the page table and disk interfaces.
 	un marco a aquella pagina si esta no tiene un marco y luego
 	cargara la pagina desde el disco al marco asignado 
 	*/
-void page_fault_handler_FIFO(struct page_table *pt, int page)
+void page_fault_handler(struct page_table *pt, int page)
 {
 	/*
 	page_table_print(pt);
@@ -45,6 +45,9 @@ void page_fault_handler_CUSTOM(struct page_table *pt, int page){
 
 }
 
+//char ** frame_table;
+
+
 int main( int argc, char *argv[] )
 {
 	if(argc!=5) {
@@ -66,10 +69,10 @@ int main( int argc, char *argv[] )
 
 	struct page_table *pt;
 	if (!strcmp(algorithm, "fifo")){
-		pt = page_table_create( npages, nframes, page_fault_handler_FIFO );
+		pt = page_table_create( npages, nframes, page_fault_handler );
 	}
 	else if (!strcmp(algorithm, "custom")){
-		pt = page_table_create( npages, nframes, page_fault_handler_CUSTOM);
+		pt = page_table_create( npages, nframes, page_fault_handler );
 	}
 	else {
 		fprintf(stderr, "unknown algorithm: %s\n",algorithm);
@@ -85,8 +88,27 @@ int main( int argc, char *argv[] )
 	char *virtmem = page_table_get_virtmem(pt); 
 	//Inicio de la memoria fisica  de la tabla de paginas pt
 	char *physmem = page_table_get_physmem(pt);
-	char *frame_table = malloc(nframes*sizeof(char));
+	//char *frame_table = malloc(nframes*sizeof(char));
 
+	
+
+	for (int i = 0; i < nframes; i++){
+		page_table_print_entry(pt, i);
+		page_table_set_entry(pt, i, i, PROT_WRITE | PROT_READ);
+		//page_table_print_entry(pt, i);
+		
+	}
+	printf("---------------------\n");
+	page_table_print(pt);
+	printf("---------------------\n");
+
+	for (int i = 0; i < npages; i++){
+		page_table_print_entry(pt, i);
+		int f;
+		int b;
+		page_table_get_entry(pt, i, &f, &b);
+		printf("frame numero: %d, permisos de acceso: %d\n", f, b);
+	}
 	if (!strcmp(program,"sort")) {
 		sort_program(virtmem,npages*PAGE_SIZE);
 

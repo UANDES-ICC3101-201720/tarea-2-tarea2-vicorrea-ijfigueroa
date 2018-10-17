@@ -165,7 +165,6 @@ void page_table_print( struct page_table *pt )
 
 int page_table_get_nframes( struct page_table *pt )
 {
-	printf("numero de frames2: %d\n",pt->nframes );
 	return pt->nframes;
 }
 
