@@ -85,10 +85,8 @@ int main( int argc, char *argv[] )
 	//Inicio de la memoria fisica  de la tabla de paginas pt
 	char *physmem = page_table_get_physmem(pt);
 	char *frame_table = malloc(nframes*sizeof(char));
-
-	for 
 	
-	if(!strcmp(program,"sort")) {
+	if (!strcmp(program,"sort")) {
 		sort_program(virtmem,npages*PAGE_SIZE);
 
 	} else if(!strcmp(program,"scan")) {
