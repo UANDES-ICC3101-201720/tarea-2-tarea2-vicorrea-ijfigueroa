@@ -17,40 +17,41 @@ how to use the page table and disk interfaces.
 
 struct disk * disk;
 int * frame_table;
-
+int nframes;
 //#define q_size 5
-//int queue[q_size];
+int *queue;
 int cabeza = -1;
 int cola = -1;
 
-void enQueue(int *queue, int valor){
-	if (cola != sizeof(queue)){ // no esta lleno
+void enQueue(int valor){
+	if (cola - cabeza == nframes - 1){ // esta lleno
+		printf("No se puede insertar el %d, el queue esta lleno\n", valor);
+	}
+	else{
 		if (cabeza == -1){
 			cabeza = 0;
 		}
 		cola++;
 		queue[cola] = valor;
-	}
-	else{
-		printf("No se puede insertar, el queue esta lleno\n");
+		printf("Agregando queue[%d] = %d\n", cola, valor);
 	}
 }
-int deQueue(int *queue){
+int deQueue(){
 	int ret = -1;
-	if (cabeza != -1){ // no esta vacio
-		ret = queue[cabeza];
-		cabeza++;
-		if (cabeza > cola){
-			cabeza = -1;
-			cola = -1;
-		}
+	if (cabeza == -1){ // esta vacio
+		printf("No se puede elimiar, el queue esta vacio\n");
 	}
 	else{
-		printf("No se puede elimiar, el queue esta vacio\n");
+		ret = queue[cabeza];
+		printf("Eliminando queue[%d] = %d\n", cabeza, ret);
+		cabeza++;
+		if (cabeza > cola){
+			cabeza = cola = -1;
+		}
 	}
 	return ret;
 }
-void impirmirQueue(int *queue){
+void impirmirQueue(){
 	if (cola == -1){
 		printf("El queue esta vacio\n");
 	}
@@ -87,6 +88,7 @@ void page_fault_handler_FIFO(struct page_table *pt, int page)
 
 	printf("page fault on page #%d\n",page);
 	exit(1);
+
 }
 
 void page_fault_handler_CUSTOM(struct page_table *pt, int page){
@@ -106,7 +108,7 @@ int main( int argc, char *argv[] )
 	}
 
 	int npages = atoi(argv[1]);
-	int nframes = atoi(argv[2]);
+	nframes = atoi(argv[2]);
 	const char *algorithm = argv[3];
 	const char *program = argv[4];
 
@@ -144,32 +146,30 @@ int main( int argc, char *argv[] )
 	char *physmem = page_table_get_physmem(pt);
 	//char *frame_table = malloc(nframes*sizeof(char));
 
-	int queue[npages];
-	int q_size = sizeof(queue)/4;
-	printf("El queue es de tamano %d\n", q_size);
-	
-	deQueue(queue);
-	enQueue(queue,4);
-	enQueue(queue,13);
-	enQueue(queue,7);
-	impirmirQueue(queue);
-	int eliminado = deQueue(queue);
-	printf("Eliminaste el %d\n", eliminado);
-	enQueue(queue,90);
-	enQueue(queue,100);
-	enQueue(queue,8);
-	enQueue(queue,1);
-	impirmirQueue(queue);
-	for (int a = 0; a < q_size; a++) {
-		deQueue(queue);
-	}
-	impirmirQueue(queue);
+	queue = malloc(sizeof(int)*nframes);
 
-	/*
+	deQueue();
+	enQueue(4);
+	enQueue(13);
+	deQueue();
+	enQueue(7);
+	impirmirQueue();
+	deQueue();
+	enQueue(90);
+	enQueue(100);
+	impirmirQueue();
+	enQueue(8);
+	enQueue(1);
+	enQueue(77);
+	impirmirQueue();
+	for (int a = 0; a < nframes; a++) {
+		deQueue();
+	}
+	impirmirQueue();
+	
+	
 	for (int i = 0; i < nframes; i++){
-		//page_table_print_entry(pt, i);
 		page_table_set_entry(pt, i, i, PROT_WRITE | PROT_READ);
-		page_table_print_entry(pt, i);
 		
 	}
 	printf("---------------------\n");
@@ -182,8 +182,14 @@ int main( int argc, char *argv[] )
 		int b;
 		page_table_get_entry(pt, i, &f, &b);
 		printf("frame numero: %d, permisos de acceso: %d\n", f, b);
+		if (b != 0){
+			frame_table[f] = f;
+		}
 	}
-	*/
+	
+	for (int t = 0; t < nframes; t++){
+		printf("frame_table[%d] = %d\n", t, frame_table[t]);
+	}
 
 	if (!strcmp(program,"sort")) {
 		sort_program(virtmem,npages*PAGE_SIZE);
