@@ -18,7 +18,7 @@ how to use the page table and disk interfaces.
 struct disk * disk;
 int * frame_table;
 int nframes;
-//#define q_size 5
+
 int *queue;
 int cabeza = -1;
 int cola = -1;
@@ -85,18 +85,26 @@ void page_fault_handler_FIFO(struct page_table *pt, int page)
 			}
 	}
 	*/
-
+	printf("USANDO PAGE FAULT HANDLER FIFO:\n");
+	enQueue(0);
+	page_table_set_entry(pt, page, 0, PROT_READ);
+	printf("a\n");
+	char *physmem = page_table_get_physmem(pt);
+	printf("b\n");
+	disk_read(disk, page, &physmem[0*PAGE_SIZE]); // ERROR!!!!
+	printf("c\n");
 	printf("page fault on page #%d\n",page);
 	exit(1);
-
 }
 
 void page_fault_handler_CUSTOM(struct page_table *pt, int page){
-
+	printf("page fault on page #%d\n",page);
+	exit(1);
 }
 
 void page_fault_handler_RANDOM(struct page_table *pt, int page){
-
+	printf("page fault on page #%d\n",page);
+	exit(1);
 }
 
 int main( int argc, char *argv[] )
@@ -143,11 +151,10 @@ int main( int argc, char *argv[] )
 	//Inicio de la memoria virtual de la tabla de paginas pt
 	char *virtmem = page_table_get_virtmem(pt); 
 	//Inicio de la memoria fisica  de la tabla de paginas pt
-	char *physmem = page_table_get_physmem(pt);
-	//char *frame_table = malloc(nframes*sizeof(char));
+	//char *physmem = page_table_get_physmem(pt);
 
 	queue = malloc(sizeof(int)*nframes);
-
+	/*
 	deQueue();
 	enQueue(4);
 	enQueue(13);
@@ -166,16 +173,17 @@ int main( int argc, char *argv[] )
 		deQueue();
 	}
 	impirmirQueue();
-	
-	
+	*/
+	/*
 	for (int i = 0; i < nframes; i++){
 		page_table_set_entry(pt, i, i, PROT_WRITE | PROT_READ);
 		
 	}
+	*/
 	printf("---------------------\n");
 	page_table_print(pt);
 	printf("---------------------\n");
-
+	/*
 	for (int i = 0; i < npages; i++){
 		page_table_print_entry(pt, i);
 		int f;
@@ -186,7 +194,7 @@ int main( int argc, char *argv[] )
 			frame_table[f] = f;
 		}
 	}
-	
+	*/
 	for (int t = 0; t < nframes; t++){
 		printf("frame_table[%d] = %d\n", t, frame_table[t]);
 	}
