@@ -15,12 +15,15 @@ how to use the page table and disk interfaces.
 #include <string.h>
 #include <errno.h>
 
+struct disk * disk;
+int * frame_table;
+
 /*
 	Cuando se trata de leer una pagina, esta funcion le asigna 
 	un marco a aquella pagina si esta no tiene un marco y luego
 	cargara la pagina desde el disco al marco asignado 
 	*/
-void page_fault_handler(struct page_table *pt, int page)
+void page_fault_handler_FIFO(struct page_table *pt, int page)
 {
 	/*
 	page_table_print(pt);
@@ -45,14 +48,15 @@ void page_fault_handler_CUSTOM(struct page_table *pt, int page){
 
 }
 
-//char ** frame_table;
+void page_fault_handler_RANDOM(struct page_table *pt, int page){
 
+}
 
 int main( int argc, char *argv[] )
 {
 	if(argc!=5) {
 		/* Add 'random' replacement algorithm if the size of your group is 3 */
-		printf("use: virtmem <npages> <nframes> <custom|fifo> <sort|scan|focus>\n");
+		printf("use: virtmem <npages> <nframes> <random|custom|fifo> <sort|scan|focus>\n");
 		return 1;
 	}
 
@@ -60,6 +64,8 @@ int main( int argc, char *argv[] )
 	int nframes = atoi(argv[2]);
 	const char *algorithm = argv[3];
 	const char *program = argv[4];
+
+	int frame_table[nframes];
 
 	struct disk *disk = disk_open("myvirtualdisk",npages);
 	if(!disk) {
@@ -69,10 +75,13 @@ int main( int argc, char *argv[] )
 
 	struct page_table *pt;
 	if (!strcmp(algorithm, "fifo")){
-		pt = page_table_create( npages, nframes, page_fault_handler );
+		pt = page_table_create( npages, nframes, page_fault_handler_FIFO );
 	}
 	else if (!strcmp(algorithm, "custom")){
-		pt = page_table_create( npages, nframes, page_fault_handler );
+		pt = page_table_create( npages, nframes, page_fault_handler_CUSTOM );
+	}
+	else if (!strcmp(algorithm, "random")){
+		pt = page_table_create( npages, nframes, page_fault_handler_RANDOM );
 	}
 	else {
 		fprintf(stderr, "unknown algorithm: %s\n",algorithm);
