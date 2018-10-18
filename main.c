@@ -18,6 +18,51 @@ how to use the page table and disk interfaces.
 struct disk * disk;
 int * frame_table;
 
+//#define q_size 5
+//int queue[q_size];
+int cabeza = -1;
+int cola = -1;
+
+void enQueue(int *queue, int valor){
+	if (cola != sizeof(queue)){ // no esta lleno
+		if (cabeza == -1){
+			cabeza = 0;
+		}
+		cola++;
+		queue[cola] = valor;
+	}
+	else{
+		printf("No se puede insertar, el queue esta lleno\n");
+	}
+}
+int deQueue(int *queue){
+	int ret = -1;
+	if (cabeza != -1){ // no esta vacio
+		ret = queue[cabeza];
+		cabeza++;
+		if (cabeza > cola){
+			cabeza = -1;
+			cola = -1;
+		}
+	}
+	else{
+		printf("No se puede elimiar, el queue esta vacio\n");
+	}
+	return ret;
+}
+void impirmirQueue(int *queue){
+	if (cola == -1){
+		printf("El queue esta vacio\n");
+	}
+	else{
+		printf("El queue contiene lo siguiente:\n");
+		for (int i = cabeza; i <= cola; i++){
+			printf("%d ", queue[i]);
+		}
+		printf("\n");
+	}
+}
+
 /*
 	Cuando se trata de leer una pagina, esta funcion le asigna 
 	un marco a aquella pagina si esta no tiene un marco y luego
@@ -99,12 +144,32 @@ int main( int argc, char *argv[] )
 	char *physmem = page_table_get_physmem(pt);
 	//char *frame_table = malloc(nframes*sizeof(char));
 
+	int queue[npages];
+	int q_size = sizeof(queue)/4;
+	printf("El queue es de tamano %d\n", q_size);
 	
+	deQueue(queue);
+	enQueue(queue,4);
+	enQueue(queue,13);
+	enQueue(queue,7);
+	impirmirQueue(queue);
+	int eliminado = deQueue(queue);
+	printf("Eliminaste el %d\n", eliminado);
+	enQueue(queue,90);
+	enQueue(queue,100);
+	enQueue(queue,8);
+	enQueue(queue,1);
+	impirmirQueue(queue);
+	for (int a = 0; a < q_size; a++) {
+		deQueue(queue);
+	}
+	impirmirQueue(queue);
 
+	/*
 	for (int i = 0; i < nframes; i++){
-		page_table_print_entry(pt, i);
-		page_table_set_entry(pt, i, i, PROT_WRITE | PROT_READ);
 		//page_table_print_entry(pt, i);
+		page_table_set_entry(pt, i, i, PROT_WRITE | PROT_READ);
+		page_table_print_entry(pt, i);
 		
 	}
 	printf("---------------------\n");
@@ -118,6 +183,8 @@ int main( int argc, char *argv[] )
 		page_table_get_entry(pt, i, &f, &b);
 		printf("frame numero: %d, permisos de acceso: %d\n", f, b);
 	}
+	*/
+
 	if (!strcmp(program,"sort")) {
 		sort_program(virtmem,npages*PAGE_SIZE);
 
