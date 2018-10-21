@@ -14,6 +14,7 @@ how to use the page table and disk interfaces.
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <limits.h>
 
 struct disk * disk;
 int * frame_table;
@@ -26,7 +27,7 @@ int cola = -1;
 
 int enQueue(int valor){
 	if (cola - cabeza == nframes - 1){ // esta lleno
-		printf("No se puede insertar el %d, el queue esta lleno\n", valor);
+		//printf("No se puede insertar el %d, el queue esta lleno\n", valor);
 		return -1;
 	}
 	else{
@@ -35,18 +36,18 @@ int enQueue(int valor){
 		}
 		cola++;
 		queue[cola] = valor;
-		printf("Agregando queue[%d] = %d\n", cola, valor);
+		//printf("Agregando queue[%d] = %d\n", cola, valor);
 		return valor;
 	}
 }
 int deQueue(){
 	int ret = -1;
 	if (cabeza == -1){ // esta vacio
-		printf("No se puede elimiar, el queue esta vacio\n");
+		//printf("No se puede elimiar, el queue esta vacio\n");
 	}
 	else{
 		ret = queue[cabeza];
-		printf("Eliminando queue[%d] = %d\n", cabeza, ret);
+		//printf("Eliminando queue[%d] = %d\n", cabeza, ret);
 		cabeza++;
 		if (cabeza > cola){
 			cabeza = cola = -1;
@@ -56,10 +57,10 @@ int deQueue(){
 }
 void impirmirQueue(){
 	if (cola == -1){
-		printf("El queue esta vacio\n");
+		//printf("El queue esta vacio\n");
 	}
 	else{
-		printf("El queue contiene lo siguiente:\n");
+		//printf("El queue contiene lo siguiente:\n");
 		for (int i = cabeza; i <= cola; i++){
 			printf("%d ", queue[i]);
 		}
@@ -73,59 +74,91 @@ void impirmirQueue(){
 	cargara la pagina desde el disco al marco asignado 
 	*/
 int marco = 0;
+int cont_marco_vic = 0;
+
+int page_fault_count = 0;
+int read_disk_count = 0;
+int write_disk_count = 0;
+
 void page_fault_handler_FIFO(struct page_table *pt, int page)
 {
-	/*
-	page_table_print(pt);
-	char ** frame_table = page_table_get_frame_table(pt);
-	int nframes = page_table_get_nframes(pt);
-	char *physmem = page_table_get_physmem(pt);
-	int ftFull = 0;
-	if (!ftFull){
-		for (int i = 0; i<nframes;i++)
-			if(frame_table[i]==NULL){
-				page_table_set_entry(pt, page, i, PROT_READ);
-				disk_read(disk,page,&physmem[i]);
-			}
-	}
-	*/
-	printf("USANDO PAGE FAULT HANDLER FIFO:\n");
+	page_fault_count++;
+	//printf("page fault on page #%d\n",page);
+	//printf("USANDO PAGE FAULT HANDLER FIFO:\n");
 	if (enQueue(marco) != -1){ // si se pudo meter al queue
-		printf("queue no lleno\n");
 		page_table_set_entry(pt, page, marco, PROT_READ|PROT_WRITE|PROT_EXEC);
-		printf("a\n");
 		disk_read(disk, page, &physmem[marco*PAGE_SIZE]);
-		printf("b\n");
+		read_disk_count++;
 		frame_table[marco] = page;
-		printf("c\n");
 		marco++;
 	}
 	else{
 		int marco_victima = deQueue();
 		disk_write(disk, frame_table[marco_victima], &physmem[marco_victima*PAGE_SIZE]);
+		write_disk_count++;
 		disk_read(disk, page, &physmem[marco_victima*PAGE_SIZE]);
+		read_disk_count++;
 		page_table_set_entry(pt, page, marco_victima, PROT_READ|PROT_WRITE|PROT_EXEC);
 		page_table_set_entry(pt, frame_table[marco_victima], marco_victima, 0);
 		frame_table[marco_victima] = page;
-		printf("a\n");
 		enQueue(marco_victima);
-		printf("b\n");
-		impirmirQueue();
 	}
 }
 
 void page_fault_handler_CUSTOM(struct page_table *pt, int page){
-	printf("page fault on page #%d\n",page);
-	exit(1);
+	page_fault_count++;
+	//printf("page fault on page #%d\n",page);
+	//printf("USANDO PAGE FAULT HANDLER CUSTOM:\n");
+	if (marco == nframes){ 
+		int marco_victima = cont_marco_vic;
+		disk_write(disk, frame_table[marco_victima], &physmem[marco_victima*PAGE_SIZE]);
+		write_disk_count++;
+		disk_read(disk, page, &physmem[marco_victima*PAGE_SIZE]);
+		read_disk_count++;
+		page_table_set_entry(pt, page, marco_victima, PROT_READ|PROT_WRITE|PROT_EXEC);
+		page_table_set_entry(pt, frame_table[marco_victima], marco_victima, 0);
+		frame_table[marco_victima] = page;
+		cont_marco_vic++;
+		if (cont_marco_vic == nframes){
+			cont_marco_vic = 0;
+		}
+	}
+	else{
+		page_table_set_entry(pt, page, marco, PROT_READ|PROT_WRITE|PROT_EXEC);
+		disk_read(disk, page, &physmem[marco*PAGE_SIZE]);
+		read_disk_count++;
+		frame_table[marco] = page;
+		marco++;
+	}
 }
 
 void page_fault_handler_RANDOM(struct page_table *pt, int page){
-	printf("page fault on page #%d\n",page);
-	exit(1);
+	page_fault_count++;
+	//printf("page fault on page #%d\n",page);
+	//printf("USANDO PAGE FAULT HANDLER RANDOM:\n");
+	if (marco == nframes){
+		int marco_victima = lrand48()%nframes;
+		disk_write(disk, frame_table[marco_victima], &physmem[marco_victima*PAGE_SIZE]);
+		write_disk_count++;
+		disk_read(disk, page, &physmem[marco_victima*PAGE_SIZE]);
+		read_disk_count++;
+		page_table_set_entry(pt, page, marco_victima, PROT_READ|PROT_WRITE|PROT_EXEC);
+		page_table_set_entry(pt, frame_table[marco_victima], marco_victima, 0);
+		frame_table[marco_victima] = page;
+	}
+	else{
+		page_table_set_entry(pt, page, marco, PROT_READ|PROT_WRITE|PROT_EXEC);
+		disk_read(disk, page, &physmem[marco*PAGE_SIZE]);
+		read_disk_count++;
+		frame_table[marco] = page;
+		marco++;
+	}
+	
 }
 
 int main( int argc, char *argv[] )
 {
+
 	if(argc!=5) {
 		/* Add 'random' replacement algorithm if the size of your group is 3 */
 		printf("use: virtmem <npages> <nframes> <random|custom|fifo> <sort|scan|focus>\n");
@@ -170,51 +203,7 @@ int main( int argc, char *argv[] )
 	//Inicio de la memoria fisica  de la tabla de paginas pt
 	physmem = page_table_get_physmem(pt);
 
-	queue = malloc(sizeof(int)*nframes);
-	/*
-	deQueue();
-	enQueue(4);
-	enQueue(13);
-	deQueue();
-	enQueue(7);
-	impirmirQueue();
-	deQueue();
-	enQueue(90);
-	enQueue(100);
-	impirmirQueue();
-	enQueue(8);
-	enQueue(1);
-	enQueue(77);
-	impirmirQueue();
-	for (int a = 0; a < nframes; a++) {
-		deQueue();
-	}
-	impirmirQueue();
-	*/
-	/*
-	for (int i = 0; i < nframes; i++){
-		page_table_set_entry(pt, i, i, PROT_WRITE | PROT_READ);
-		
-	}
-	*/
-	printf("---------------------\n");
-	page_table_print(pt);
-	printf("---------------------\n");
-	/*
-	for (int i = 0; i < npages; i++){
-		page_table_print_entry(pt, i);
-		int f;
-		int b;
-		page_table_get_entry(pt, i, &f, &b);
-		printf("frame numero: %d, permisos de acceso: %d\n", f, b);
-		if (b != 0){
-			frame_table[f] = f;
-		}
-	}
-	*/
-	for (int t = 0; t < nframes; t++){
-		printf("frame_table[%d] = %d\n", t, frame_table[t]);
-	}
+	queue = malloc(sizeof(int)*INT_MAX);
 
 	if (!strcmp(program,"sort")) {
 		sort_program(virtmem,npages*PAGE_SIZE);
@@ -230,14 +219,21 @@ int main( int argc, char *argv[] )
 
 	}
 
-
-	printf("---------------------\n");
+	/*
+	printf("----------- PAGE TABLE ----------\n");
 	page_table_print(pt);
-	printf("---------------------\n");
+	printf("\n");
 
+	printf("----------- FRAME TABLE ---------\n");
 	for (int t = 0; t < nframes; t++){
 		printf("frame_table[%d] = %d\n", t, frame_table[t]);
 	}
+	*/
+
+	printf("%d %d %d %d", page_fault_count, read_disk_count, write_disk_count, nframes);
+
+	free(frame_table);
+	free(queue);
 
 	page_table_delete(pt);
 	disk_close(disk);
