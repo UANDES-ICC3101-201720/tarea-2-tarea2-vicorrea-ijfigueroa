@@ -18,14 +18,16 @@ how to use the page table and disk interfaces.
 struct disk * disk;
 int * frame_table;
 int nframes;
+char *physmem;
 
 int *queue;
 int cabeza = -1;
 int cola = -1;
 
-void enQueue(int valor){
+int enQueue(int valor){
 	if (cola - cabeza == nframes - 1){ // esta lleno
 		printf("No se puede insertar el %d, el queue esta lleno\n", valor);
+		return -1;
 	}
 	else{
 		if (cabeza == -1){
@@ -34,6 +36,7 @@ void enQueue(int valor){
 		cola++;
 		queue[cola] = valor;
 		printf("Agregando queue[%d] = %d\n", cola, valor);
+		return valor;
 	}
 }
 int deQueue(){
@@ -69,6 +72,7 @@ void impirmirQueue(){
 	un marco a aquella pagina si esta no tiene un marco y luego
 	cargara la pagina desde el disco al marco asignado 
 	*/
+int marco = 0;
 void page_fault_handler_FIFO(struct page_table *pt, int page)
 {
 	/*
@@ -86,15 +90,28 @@ void page_fault_handler_FIFO(struct page_table *pt, int page)
 	}
 	*/
 	printf("USANDO PAGE FAULT HANDLER FIFO:\n");
-	enQueue(0);
-	page_table_set_entry(pt, page, 0, PROT_READ);
-	printf("a\n");
-	char *physmem = page_table_get_physmem(pt);
-	printf("b\n");
-	disk_read(disk, page, &physmem[0*PAGE_SIZE]); // ERROR!!!!
-	printf("c\n");
-	printf("page fault on page #%d\n",page);
-	exit(1);
+	if (enQueue(marco) != -1){ // si se pudo meter al queue
+		printf("queue no lleno\n");
+		page_table_set_entry(pt, page, marco, PROT_READ|PROT_WRITE|PROT_EXEC);
+		printf("a\n");
+		disk_read(disk, page, &physmem[marco*PAGE_SIZE]);
+		printf("b\n");
+		frame_table[marco] = page;
+		printf("c\n");
+		marco++;
+	}
+	else{
+		int marco_victima = deQueue();
+		disk_write(disk, frame_table[marco_victima], &physmem[marco_victima*PAGE_SIZE]);
+		disk_read(disk, page, &physmem[marco_victima*PAGE_SIZE]);
+		page_table_set_entry(pt, page, marco_victima, PROT_READ|PROT_WRITE|PROT_EXEC);
+		page_table_set_entry(pt, frame_table[marco_victima], marco_victima, 0);
+		frame_table[marco_victima] = page;
+		printf("a\n");
+		enQueue(marco_victima);
+		printf("b\n");
+		impirmirQueue();
+	}
 }
 
 void page_fault_handler_CUSTOM(struct page_table *pt, int page){
@@ -120,9 +137,9 @@ int main( int argc, char *argv[] )
 	const char *algorithm = argv[3];
 	const char *program = argv[4];
 
-	int frame_table[nframes];
+	frame_table = malloc(sizeof(int) * nframes);
 
-	struct disk *disk = disk_open("myvirtualdisk",npages);
+	disk = disk_open("myvirtualdisk",npages);
 	if(!disk) {
 		fprintf(stderr,"couldn't create virtual disk: %s\n",strerror(errno));
 		return 1;
@@ -151,7 +168,7 @@ int main( int argc, char *argv[] )
 	//Inicio de la memoria virtual de la tabla de paginas pt
 	char *virtmem = page_table_get_virtmem(pt); 
 	//Inicio de la memoria fisica  de la tabla de paginas pt
-	//char *physmem = page_table_get_physmem(pt);
+	physmem = page_table_get_physmem(pt);
 
 	queue = malloc(sizeof(int)*nframes);
 	/*
@@ -211,6 +228,15 @@ int main( int argc, char *argv[] )
 	} else {
 		fprintf(stderr,"unknown program: %s\n", program);
 
+	}
+
+
+	printf("---------------------\n");
+	page_table_print(pt);
+	printf("---------------------\n");
+
+	for (int t = 0; t < nframes; t++){
+		printf("frame_table[%d] = %d\n", t, frame_table[t]);
 	}
 
 	page_table_delete(pt);
