@@ -229,7 +229,7 @@ int main( int argc, char *argv[] )
 		printf("frame_table[%d] = %d\n", t, frame_table[t]);
 	}
 	*/
-
+	
 	printf("%d %d %d %d\n", page_fault_count, read_disk_count, write_disk_count, nframes);
 
 	free(frame_table);

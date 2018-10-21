@@ -5,7 +5,7 @@ import time
 algoritmos = ["fifo", "random", "custom"]
 programas = ["scan", "focus", "sort" ]
 marcos = []
-dato=[]
+dato = []
 for algoritmo in algoritmos:
 	for programa in programas:
 		ejecutar = "./virtmem 100 {} {} {} >> {}_{}.txt "
