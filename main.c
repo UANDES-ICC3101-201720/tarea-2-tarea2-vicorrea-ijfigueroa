@@ -203,7 +203,7 @@ int main( int argc, char *argv[] )
 	//Inicio de la memoria fisica  de la tabla de paginas pt
 	physmem = page_table_get_physmem(pt);
 
-	queue = malloc(sizeof(int)*INT_MAX);
+	queue = malloc(sizeof(int)*10000);
 
 	if (!strcmp(program,"sort")) {
 		sort_program(virtmem,npages*PAGE_SIZE);
@@ -230,7 +230,7 @@ int main( int argc, char *argv[] )
 	}
 	*/
 
-	printf("%d %d %d %d", page_fault_count, read_disk_count, write_disk_count, nframes);
+	printf("%d %d %d %d\n", page_fault_count, read_disk_count, write_disk_count, nframes);
 
 	free(frame_table);
 	free(queue);
