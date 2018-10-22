@@ -35,7 +35,7 @@ for a in algoritmos:
 		#pyplot.plot(range(2,101), faltas_paginas, "r")
 		pyplot.plot(range(2,101), lecturas_disco, "r")
 		pyplot.plot(range(2,101), escrituras_disco, "b")
-		pyplot.legend(["# disk read", "# disk write"])
+		pyplot.legend(["# disk read = # page fault", "# disk write"])
 		#pyplot.plot()
 		#pyplot.show()
 

@@ -17,4 +17,4 @@ program.o: program.c
 
 clean:
 	rm -f *.o virtmem
-	rm *.png
+	rm -f *.png
