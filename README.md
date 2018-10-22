@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 Integrantes:
 	-Vicente Correa
 	-Ignacio Figueroa
@@ -30,3 +31,10 @@ faltas de pagina/lecturas de disco ya que en un principio existen marcos vacios 
 necesario escribir en disco. 
 Podemos ver que si aproximamos una interpolación de los 3 algoritmos son muy parecidos.
 
+=======
+# virtmem
+Operating Systems and Networks - Virtual Memory Assignment (Tarea 2)
+
+Gráficos:
+<img src="https://github.com/UANDES-ICC3101-201720/tarea-2-tarea2-vicorrea-ijfigueroa/blob/master/Graficos/focus%20usando%20fifo.png" />
+>>>>>>> b7e3c50435c380fe67bd55a88db1344325cd7268
